@@ -1,10 +1,16 @@
-// Swaps between AI providers based on PROVIDER in .env.
-// Add a new provider by writing a callX() function with the same shape
-// and adding one line to callModel().
+const PROVIDER = (process.env['PROVIDER'] || 'openai').toLowerCase();
 
-const PROVIDER = (process.env.PROVIDER || 'openai').toLowerCase();
+export interface ChatMessage {
+  role: string;
+  content: string;
+}
 
-async function callModel({ systemPrompt, messages }) {
+export interface CallModelArgs {
+  systemPrompt: string;
+  messages: ChatMessage[];
+}
+
+export async function callModel({ systemPrompt, messages }: CallModelArgs): Promise<string> {
   if (PROVIDER === 'openai') return callOpenAI({ systemPrompt, messages });
   if (PROVIDER === 'anthropic') return callAnthropic({ systemPrompt, messages });
   if (PROVIDER === 'nvidia') return callNVIDIA({ systemPrompt, messages });
@@ -13,8 +19,8 @@ async function callModel({ systemPrompt, messages }) {
   );
 }
 
-async function callOpenAI({ systemPrompt, messages }) {
-  const apiKey = process.env.OPENAI_API_KEY;
+async function callOpenAI({ systemPrompt, messages }: CallModelArgs): Promise<string> {
+  const apiKey = process.env['OPENAI_API_KEY'];
   if (!apiKey) {
     throw new Error(
       'Missing OPENAI_API_KEY in .env — add your key, then restart the server.'
@@ -28,7 +34,7 @@ async function callOpenAI({ systemPrompt, messages }) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: process.env['OPENAI_MODEL'] || 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
@@ -42,12 +48,12 @@ async function callOpenAI({ systemPrompt, messages }) {
     throw new Error(`OpenAI error (${response.status}): ${body.slice(0, 400)}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   return data.choices[0].message.content;
 }
 
-async function callAnthropic({ systemPrompt, messages }) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+async function callAnthropic({ systemPrompt, messages }: CallModelArgs): Promise<string> {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
   if (!apiKey) {
     throw new Error(
       'Missing ANTHROPIC_API_KEY in .env — add your key, then restart the server.'
@@ -62,7 +68,7 @@ async function callAnthropic({ systemPrompt, messages }) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+      model: process.env['ANTHROPIC_MODEL'] || 'claude-3-5-sonnet-latest',
       max_tokens: 1024,
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -74,12 +80,12 @@ async function callAnthropic({ systemPrompt, messages }) {
     throw new Error(`Anthropic error (${response.status}): ${body.slice(0, 400)}`);
   }
 
-  const data = await response.json();
-  return data.content.map((block) => block.text || '').join('');
+  const data = await response.json() as any;
+  return data.content.map((block: any) => block.text || '').join('');
 }
 
-async function callNVIDIA({ systemPrompt, messages }) {
-  const apiKey = process.env.NVIDIA_API_KEY;
+async function callNVIDIA({ systemPrompt, messages }: CallModelArgs): Promise<string> {
+  const apiKey = process.env['NVIDIA_API_KEY'];
   if (!apiKey) {
     throw new Error(
       'Missing NVIDIA_API_KEY in .env — add your nvapi- key, then restart the server.'
@@ -93,7 +99,7 @@ async function callNVIDIA({ systemPrompt, messages }) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct',
+      model: process.env['NVIDIA_MODEL'] || 'meta/llama-3.1-8b-instruct',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
@@ -108,17 +114,15 @@ async function callNVIDIA({ systemPrompt, messages }) {
     throw new Error(`NVIDIA error (${response.status}): ${body.slice(0, 400)}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   return data.choices[0].message.content;
 }
 
-module.exports = { callModel, PROVIDER, getModelConfig };
-
-function getModelConfig() {
-  const configs = {
-    openai: { model: process.env.OPENAI_MODEL || 'gpt-4o-mini' },
-    anthropic: { model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6' },
-    nvidia: { model: process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct' },
+export function getModelConfig() {
+  const configs: Record<string, { model: string }> = {
+    openai: { model: process.env['OPENAI_MODEL'] || 'gpt-4o-mini' },
+    anthropic: { model: process.env['ANTHROPIC_MODEL'] || 'claude-3-5-sonnet-latest' },
+    nvidia: { model: process.env['NVIDIA_MODEL'] || 'meta/llama-3.1-8b-instruct' },
   };
   const cfg = configs[PROVIDER] || { model: 'unknown' };
   return { provider: PROVIDER, model: cfg.model };

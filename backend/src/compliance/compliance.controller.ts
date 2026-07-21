@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller, Post, Get, Body, Param,
   Sse, MessageEvent, HttpCode, HttpStatus,
   NotFoundException, Logger,
@@ -13,7 +13,7 @@ interface AnalyzeRequest {
   documentType?: string; // 'claim' | 'policy' | 'contract'
 }
 
-@Controller('api/compliance')
+@Controller('compliance')
 export class ComplianceController {
   private readonly logger = new Logger(ComplianceController.name);
 

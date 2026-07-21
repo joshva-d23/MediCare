@@ -1,4 +1,4 @@
-<div class="ai-assistant-layout">
+<div class="ai-assistant-layout animate-fade-in-up">
 
   <!-- LEFT PANEL: Agent Selector -->
   <aside class="agent-sidebar">
@@ -14,10 +14,10 @@
       </div>
     </div>
 
-    <nav class="agent-list">
+    <nav class="agent-list stagger-container">
       <button
         *ngFor="let agent of agents"
-        class="agent-card"
+        class="agent-card interactive-hover"
         [class.active]="agent.id === activeAgentId"
         [style.--agent-accent]="agent.accent"
         (click)="selectAgent(agent.id)"
@@ -40,7 +40,7 @@
     <div class="sidebar-footer">
       <div class="model-badge">
         <span class="model-dot"></span>
-        <span>Gemini 2.0 Flash</span>
+        <span>{{ provider | uppercase }}: {{ model }}</span>
       </div>
     </div>
   </aside>
@@ -90,24 +90,24 @@
         </div>
         <h4 class="empty-title">{{ activeAgent?.name }}</h4>
         <p class="empty-desc">{{ activeAgent?.tagline }}</p>
-        <div class="prompt-chips">
-          <span class="prompt-chip" *ngIf="activeAgentId === 'clinical-decision'"
+        <div class="prompt-chips stagger-container">
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'clinical-decision'"
             (click)="composerText = 'Patient presents with chest pain, dyspnea, and elevated troponin. Generate differential diagnosis.'">
             Chest pain differential
           </span>
-          <span class="prompt-chip" *ngIf="activeAgentId === 'evidence-retrieval'"
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'evidence-retrieval'"
             (click)="composerText = 'Summarize latest evidence on SGLT2 inhibitors in heart failure with reduced ejection fraction.'">
             SGLT2 inhibitor evidence
           </span>
-          <span class="prompt-chip" *ngIf="activeAgentId === 'drug-safety'"
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'drug-safety'"
             (click)="composerText = 'Check interactions between warfarin, amiodarone, and metformin.'">
             Drug interaction check
           </span>
-          <span class="prompt-chip" *ngIf="activeAgentId === 'patient-summary'"
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'patient-summary'"
             (click)="composerText = 'Generate a structured SOAP note for a diabetic patient with recent HbA1c of 8.2%.'">
             Diabetic SOAP note
           </span>
-          <span class="prompt-chip" *ngIf="activeAgentId === 'research-assistant'"
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'research-assistant'"
             (click)="composerText = 'Find clinical trials for stage III melanoma patients eligible for immunotherapy.'">
             Melanoma trials search
           </span>
@@ -118,7 +118,7 @@
       <div class="messages-container" *ngIf="activeMessages.length > 0 || sending">
         <div
           *ngFor="let msg of activeMessages"
-          class="message-wrapper"
+          class="message-wrapper animate-scale-in"
           [class.user-wrapper]="msg.role === 'user'"
           [class.assistant-wrapper]="msg.role === 'assistant'"
         >
@@ -156,7 +156,7 @@
         </div>
 
         <!-- Typing indicator -->
-        <div class="message-wrapper assistant-wrapper" *ngIf="sending">
+        <div class="message-wrapper assistant-wrapper animate-scale-in" *ngIf="sending">
           <div class="msg-avatar assistant-avatar"
                [style.background]="activeAgent?.accent + '22'"
                [style.color]="activeAgent?.accent"

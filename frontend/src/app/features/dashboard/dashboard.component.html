@@ -1,4 +1,4 @@
-<div class="feature-page">
+<div class="feature-page animate-fade-in-up">
 
   <!-- Clinical Header -->
   <div class="page-header">
@@ -26,8 +26,7 @@
     [auditResult]="auditResult"
   ></app-pipeline-flow>
 
-  <!-- Workspace Terminal Columns -->
-  <div class="workspace-layout">
+  <div class="workspace-layout stagger-container">
     
     <!-- LEFT PANEL: Case Setup & Notes Entry -->
     <div class="left-panel">
@@ -105,7 +104,7 @@
       <div class="work-card status-card">
         <h4 class="panel-section-title status-title">Clinical Engine Latency</h4>
         <div class="status-grid">
-          <div class="status-item" *ngFor="let s of systemStatus">
+          <div class="status-item interactive-hover" *ngFor="let s of systemStatus">
             <span class="status-dot"></span>
             <span class="status-name">{{ s.name }}</span>
             <span class="status-latency">{{ s.latency }}</span>

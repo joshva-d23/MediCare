@@ -72,7 +72,8 @@ export class RagService implements OnModuleInit {
         node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
         maxRetries: 0,
         requestTimeout: 1500,
-      });
+        checkCompatibility: false,
+      } as any);
       await this.elasticClient.ping();
       
       // Verify/Create index

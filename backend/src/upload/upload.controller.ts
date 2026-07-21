@@ -7,7 +7,7 @@ import { extname } from 'path';
 
 const UPLOAD_DIR = './uploads';
 
-@Controller('api/upload')
+@Controller('upload')
 export class UploadController {
   constructor(private readonly prisma: PrismaService) {
     if (!existsSync(UPLOAD_DIR)) {

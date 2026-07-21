@@ -21,7 +21,7 @@ interface Patient {
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
-    <div class="feature-page">
+    <div class="feature-page animate-fade-in-up">
 
       <div class="page-header">
         <div class="page-header-content">
@@ -37,26 +37,26 @@ interface Patient {
           </div>
         </div>
         <div class="page-header-actions">
-          <button class="btn-ghost-sm">⊕ Add Patient</button>
-          <button class="btn-ghost-sm">⊞ Export</button>
+          <button class="btn-ghost-sm interactive-hover">⊕ Add Patient</button>
+          <button class="btn-ghost-sm interactive-hover">⊞ Export</button>
         </div>
       </div>
 
       <!-- Filters -->
       <div class="filter-row glass">
-        <button class="filter-chip" [class.active]="filter === 'all'"      (click)="filter = 'all'">All</button>
-        <button class="filter-chip" [class.active]="filter === 'critical'"  (click)="filter = 'critical'">Critical</button>
-        <button class="filter-chip" [class.active]="filter === 'stable'"    (click)="filter = 'stable'">Stable</button>
-        <button class="filter-chip" [class.active]="filter === 'observation'" (click)="filter = 'observation'">Observation</button>
+        <button class="filter-chip interactive-hover" [class.active]="filter === 'all'"      (click)="filter = 'all'">All</button>
+        <button class="filter-chip interactive-hover" [class.active]="filter === 'critical'"  (click)="filter = 'critical'">Critical</button>
+        <button class="filter-chip interactive-hover" [class.active]="filter === 'stable'"    (click)="filter = 'stable'">Stable</button>
+        <button class="filter-chip interactive-hover" [class.active]="filter === 'observation'" (click)="filter = 'observation'">Observation</button>
         <div class="filter-spacer"></div>
-        <div class="search-box">
+        <div class="search-box form-control-premium">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input placeholder="Search patients…" [(ngModel)]="searchQuery" />
         </div>
       </div>
 
       <!-- Patient Table -->
-      <div class="patient-table-wrap glass">
+      <div class="patient-table-wrap glass animate-scale-in">
         <table class="patient-table">
           <thead>
             <tr>
@@ -69,8 +69,8 @@ interface Patient {
               <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr *ngFor="let p of filteredPatients" class="patient-row">
+          <tbody class="stagger-container">
+            <tr *ngFor="let p of filteredPatients" class="patient-row interactive-hover">
               <td>
                 <div class="patient-cell">
                   <div class="patient-avatar" [style.background]="p.color">{{ p.initials }}</div>
@@ -88,7 +88,7 @@ interface Patient {
               </td>
               <td class="td-muted">{{ p.lastVisit }}</td>
               <td>
-                <a class="btn-row" [routerLink]="['/patients', p.id]">View →</a>
+                <a class="btn-row button-glow-hover" [routerLink]="['/patients', p.id]">View →</a>
               </td>
             </tr>
           </tbody>

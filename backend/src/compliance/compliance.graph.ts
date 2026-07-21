@@ -1,4 +1,4 @@
-﻿import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
+import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import Anthropic from '@anthropic-ai/sdk';
 import { Logger } from '@nestjs/common';
 import {
@@ -53,7 +53,7 @@ function addAudit(state: ComplianceState, step: string, details: Record<string, 
 
 async function callClaude(prompt: string, maxTokens = 1200): Promise<string> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const model  = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+  const model  = process.env.ANTHROPIC_MODEL ?? 'claude-3-5-sonnet-latest';
 
   const response = await client.messages.create({
     model,

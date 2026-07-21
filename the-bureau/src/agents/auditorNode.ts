@@ -1,8 +1,6 @@
 import { MediscribeStateType, AuditResult } from "../state";
 
-// Use require since llmProvider is a Javascript file (CommonJS)
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { callModel } = require("../llmProvider");
+import { callModel } from "../llmProvider";
 
 /**
  * Node 9 — Consistency Auditor

@@ -20,7 +20,7 @@ interface ClinicalNote {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="feature-page">
+    <div class="feature-page animate-fade-in-up">
 
       <div class="page-header">
         <div class="page-header-content">
@@ -37,35 +37,35 @@ interface ClinicalNote {
           </div>
         </div>
         <div class="page-header-actions">
-          <button class="btn-primary-sm" (click)="composing = !composing">
+          <button class="btn-primary-sm button-glow-hover" (click)="composing = !composing">
             {{ composing ? '✕ Cancel' : '✎ New Note' }}
           </button>
         </div>
       </div>
 
       <!-- Composer -->
-      <div class="composer-card glass" *ngIf="composing">
+      <div class="composer-card glass animate-scale-in" *ngIf="composing">
         <div class="composer-header">
           <span class="composer-title">New Clinical Note</span>
           <div class="type-chips">
-            <button *ngFor="let t of noteTypes" class="type-chip" [class.active]="newNote.type === t.value" (click)="newNote.type = t.value">{{ t.label }}</button>
+            <button *ngFor="let t of noteTypes" class="type-chip interactive-hover" [class.active]="newNote.type === t.value" (click)="newNote.type = t.value">{{ t.label }}</button>
           </div>
         </div>
-        <input class="note-input" placeholder="Patient name or ID…" [(ngModel)]="newNote.patient" />
-        <input class="note-input" placeholder="Note title…" [(ngModel)]="newNote.title" />
-        <textarea class="note-textarea" rows="6" placeholder="Begin typing your clinical note here. AI will assist with structure and terminology…" [(ngModel)]="newNote.content"></textarea>
+        <input class="note-input form-control-premium" placeholder="Patient name or ID…" [(ngModel)]="newNote.patient" />
+        <input class="note-input form-control-premium" placeholder="Note title…" [(ngModel)]="newNote.title" />
+        <textarea class="note-textarea form-control-premium" rows="6" placeholder="Begin typing your clinical note here. AI will assist with structure and terminology…" [(ngModel)]="newNote.content"></textarea>
         <div class="composer-footer">
           <div class="ai-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
             AI documentation assistant active
           </div>
-          <button class="btn-primary-sm" (click)="saveNote()" [disabled]="!newNote.title.trim()">Save Note</button>
+          <button class="btn-primary-sm button-glow-hover" (click)="saveNote()" [disabled]="!newNote.title.trim()">Save Note</button>
         </div>
       </div>
 
       <!-- Notes Grid -->
-      <div class="notes-grid">
-        <div class="note-card glass" *ngFor="let note of notes" [style.--note-color]="note.color">
+      <div class="notes-grid stagger-container">
+        <div class="note-card glass interactive-hover" *ngFor="let note of notes" [style.--note-color]="note.color">
           <div class="note-card-header">
             <span class="note-type-badge" [class]="'type-' + note.type">{{ note.type }}</span>
             <span class="note-date">{{ note.date }}</span>
@@ -81,7 +81,7 @@ interface ClinicalNote {
           </div>
           <div class="note-footer">
             <span class="note-author">Dr. {{ note.author }}</span>
-            <button class="note-action-btn">Edit →</button>
+            <button class="note-action-btn button-glow-hover" style="padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(14,165,233,0.25); background: rgba(14,165,233,0.06); transition: all 0.2s;">Edit →</button>
           </div>
         </div>
       </div>

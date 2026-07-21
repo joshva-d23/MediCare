@@ -154,6 +154,7 @@ interface MonitorNode {
       box-shadow: var(--shadow);
       font-family: var(--font-body);
       overflow: hidden;
+      animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     .monitor-screen {
@@ -259,24 +260,26 @@ interface MonitorNode {
       .monitor-node-wrap.running & {
         border-color: var(--accent);
         color: var(--accent);
+        box-shadow: 0 0 14px var(--accent-glow);
+        animation: pulseGlow 1.5s infinite ease-in-out;
       }
 
       .monitor-node-wrap.complete & {
         background: var(--accent);
         border-color: var(--accent);
         color: #fff;
-        animation: scalePop 0.3s var(--ease-spring);
+        animation: scalePop 0.4s var(--ease-spring) both;
       }
 
       .monitor-node-wrap.flagged & {
         background: var(--error);
         border-color: var(--error);
         color: #fff;
-        animation: scalePop 0.3s var(--ease-spring);
+        animation: scalePop 0.4s var(--ease-spring) both;
       }
 
       .monitor-node-wrap.selected & {
-        box-shadow: 0 0 0 3px rgba(31, 111, 99, 0.2);
+        box-shadow: 0 0 0 3.5px rgba(31, 111, 99, 0.35);
       }
     }
 
@@ -365,7 +368,9 @@ interface MonitorNode {
       flex-shrink: 0;
 
       &.active {
-        background: rgba(31, 111, 99, 0.015);
+        background: rgba(31, 111, 99, 0.025);
+        box-shadow: inset -2px 0 14px var(--accent-glow);
+        animation: pulseGlow 3s infinite ease-in-out;
       }
     }
 
