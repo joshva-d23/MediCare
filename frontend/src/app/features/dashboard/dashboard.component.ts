@@ -92,11 +92,10 @@ export class DashboardComponent implements OnInit {
   ];
 
   readonly systemStatus = [
-    { name: 'PostgreSQL',       status: 'online', latency: '12ms'  },
-    { name: 'Qdrant Vector DB', status: 'online', latency: '8ms'   },
-    { name: 'Elasticsearch',    status: 'online', latency: '15ms'  },
-    { name: 'NVIDIA NIM API',   status: 'online', latency: '340ms' },
-    { name: 'Anthropic Claude', status: 'online', latency: '420ms' },
+    { name: 'PostgreSQL',         status: 'online',  latency: '14ms'  },
+    { name: 'Qdrant Vector DB',   status: 'online',  latency: '6ms'   },
+    { name: 'Groq AI Engine',     status: 'online',  latency: '280ms' },
+    { name: 'HuggingFace Embeds', status: 'online',  latency: '190ms' },
   ];
 
   constructor(private pipelineService: ClinicalPipelineService) {}

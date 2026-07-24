@@ -4,30 +4,30 @@
 
 :root {
   /* Light Theme / Bright Theme (Default) */
-  --bg-deep: #F4F6F5; /* Cool clinical chart paper white */
-  --bg-panel: #FFFFFF; /* Stark white cards sitting on cool deep */
-  --bg-glass: rgba(20, 29, 26, 0.02);
-  --bg-glass-hover: rgba(20, 29, 26, 0.04);
-  --border: #DFE4E2; /* Faint clinical divider */
-  --border-bright: #C7D1CD;
-  --text: #141D1A; /* High contrast charcoal-green */
-  --text-muted: rgba(20, 29, 26, 0.62);
-  --text-dim: rgba(20, 29, 26, 0.42);
-  --accent: #1F6F63; /* Teal accent */
-  --accent-glow: rgba(31, 111, 99, 0.15);
-  --success: #1F6F63; /* Teal for verified */
-  --error: #C28B30; /* Restrained clinical amber for variance */
+  --bg-deep: #F1F5F9; /* Clean, modern medical gray-blue */
+  --bg-panel: #FFFFFF; /* Stark white cards sitting on deep background */
+  --bg-glass: rgba(14, 165, 233, 0.05); /* Light blue glassmorphic tint */
+  --bg-glass-hover: rgba(14, 165, 233, 0.09);
+  --border: #E2E8F0; /* Clean slate dividers */
+  --border-bright: #CBD5E1;
+  --text: #0F172A; /* High legibility slate 900 */
+  --text-muted: #475569; /* slate 600 */
+  --text-dim: #64748B; /* slate 500 */
+  --accent: #0891B2; /* Vibrant medical cyan/teal */
+  --accent-glow: rgba(8, 145, 178, 0.15);
+  --success: #10B981; /* Emerald green for stable */
+  --error: #EF4444; /* Bright crimson red for critical */
 
   /* Clinical Tokens */
-  --clinical-bg: #EDF1EF; /* Cool clinical gray for nested structures */
-  --clinical-border: #DFE4E2;
-  --clinical-text: #141D1A;
+  --clinical-bg: #F8FAFC; /* Slate 50 */
+  --clinical-border: #E2E8F0;
+  --clinical-text: #0F172A;
 
-  --island-bg: rgba(20, 29, 26, 0.95);
+  --island-bg: rgba(15, 23, 42, 0.95); /* Deep slate for dynamic island */
   --island-border: rgba(255, 255, 255, 0.1);
-  --msg-assistant-bg: rgba(20, 29, 26, 0.02);
+  --msg-assistant-bg: rgba(14, 165, 233, 0.04);
   --bg-panel-solid: #FFFFFF;
-  --shadow: 0 8px 24px rgba(20, 29, 26, 0.03), 0 1px 2px rgba(20, 29, 26, 0.01);
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
 
   --font-display: "Newsreader", Georgia, serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -3052,6 +3052,116 @@ body {
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 3px var(--accent-glow) !important;
     background-color: var(--bg-panel) !important;
+  }
+}
+
+/* ============================================================
+   HEALTHCARE PIPELINE ANIMATIONS & MEDICAL EFFECTS
+   ============================================================ */
+
+/* Vital Sign Pulse Animation */
+@keyframes vitalPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.5;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.vital-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  display: inline-block;
+  animation: vitalPulse 2s infinite var(--ease-smooth);
+}
+
+.vital-pulse-dot.critical {
+  background-color: var(--error);
+  animation: vitalPulse 1s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Floating Clinical Avatars */
+@keyframes avatarFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+.animate-float-avatar {
+  animation: avatarFloat 6s ease-in-out infinite;
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s var(--ease-spring) forwards;
+}
+
+.animate-scale-in {
+  animation: fadeInUp 0.4s var(--ease-spring) forwards;
+}
+
+/* Staff Directory Authorized Badge Styling */
+.staff-only-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8, 145, 178, 0.08);
+  border: 1px solid rgba(8, 145, 178, 0.2);
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.02);
+  i { font-style: normal; }
+}
+
+.pulse-card-glow {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(135deg, var(--accent), transparent);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0.15;
+    transition: opacity 0.3s ease;
+  }
+  &:hover::before {
+    opacity: 0.3;
   }
 }
 

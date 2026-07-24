@@ -183,6 +183,7 @@ model Patient {
   lastName          String
   dateOfBirth       DateTime
   gender            String
+  phoneNumber       String?
   bloodGroup        String?
   allergies         String[]
   chronicConditions String[]

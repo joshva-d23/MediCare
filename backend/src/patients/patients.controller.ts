@@ -92,12 +92,12 @@ export class PatientsController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get a single patient by UUID' })
-  @ApiParam({ name: 'id', type: String, description: 'Patient UUID' })
+  @ApiOperation({ summary: 'Get a single patient by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Patient ID' })
   @ApiResponse({ status: 200, description: 'Patient record returned.' })
   @ApiResponse({ status: 404, description: 'Patient not found.' })
   async findOne(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id') id: string,
   ): Promise<Patient> {
     return this.patientsService.findOne(id);
   }
@@ -109,13 +109,11 @@ export class PatientsController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Partially update a patient record' })
-  @ApiParam({ name: 'id', type: String, description: 'Patient UUID' })
+  @ApiParam({ name: 'id', type: String, description: 'Patient ID' })
   @ApiResponse({ status: 200, description: 'Patient updated successfully.' })
-  @ApiResponse({ status: 400, description: 'Validation error.' })
   @ApiResponse({ status: 404, description: 'Patient not found.' })
-  @ApiResponse({ status: 409, description: 'MRN already in use by another patient.' })
   async update(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdatePatientDto,
   ): Promise<Patient> {
     return this.patientsService.update(id, dto);
@@ -127,13 +125,63 @@ export class PatientsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft-delete a patient (sets isActive = false)' })
-  @ApiParam({ name: 'id', type: String, description: 'Patient UUID' })
+  @ApiOperation({ summary: 'Soft-delete a patient' })
+  @ApiParam({ name: 'id', type: String, description: 'Patient ID' })
   @ApiResponse({ status: 204, description: 'Patient deactivated.' })
   @ApiResponse({ status: 404, description: 'Patient not found.' })
   async remove(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id') id: string,
   ): Promise<void> {
     return this.patientsService.remove(id);
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /patients/:id/records
+  // ---------------------------------------------------------------------------
+
+  @Get(':id/records')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get patient medical and treatment records' })
+  async getRecords(@Param('id') id: string): Promise<any[]> {
+    return this.patientsService.getHealthRecords(id);
+  }
+
+  // ---------------------------------------------------------------------------
+  // POST /patients/:id/records
+  // ---------------------------------------------------------------------------
+
+  @Post(':id/records')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a treatment or vital signs record' })
+  async addRecord(
+    @Param('id') id: string,
+    @Body() body: { recordType: string; title: string; description?: string; data: any },
+  ): Promise<any> {
+    return this.patientsService.addHealthRecord(id, body);
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /patients/:id/notes
+  // ---------------------------------------------------------------------------
+
+  @Get(':id/notes')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get patient clinical notes' })
+  async getNotes(@Param('id') id: string): Promise<any[]> {
+    return this.patientsService.getClinicalNotes(id);
+  }
+
+  // ---------------------------------------------------------------------------
+  // POST /patients/:id/notes
+  // ---------------------------------------------------------------------------
+
+  @Post(':id/notes')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a clinical note' })
+  async addNote(
+    @Param('id') id: string,
+    @Body() body: { noteType: string; title: string; subjective?: string; objective?: string; assessment?: string; plan?: string; rawContent?: string; doctorName: string },
+  ): Promise<any> {
+    return this.patientsService.addClinicalNote(id, body);
   }
 }

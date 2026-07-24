@@ -91,13 +91,21 @@
         <h4 class="empty-title">{{ activeAgent?.name }}</h4>
         <p class="empty-desc">{{ activeAgent?.tagline }}</p>
         <div class="prompt-chips stagger-container">
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'patient-registry'"
+            (click)="composerText = 'Search for Mitchell'">
+            🔍 Search Mitchell
+          </span>
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'patient-registry'"
+            (click)="composerText = 'Register patient Robert Smith, DOB 1988-06-15, male, phone 555-0294, blood O+, allergies none'">
+            ⊕ Intake Robert Smith
+          </span>
+          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'patient-registry'"
+            (click)="composerText = 'Add vital signs for P-4821: BP 130/80, HR 76, temp 98.6, rr 16, spo2 98'">
+            🩺 Log Vitals for P-4821
+          </span>
           <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'clinical-decision'"
             (click)="composerText = 'Patient presents with chest pain, dyspnea, and elevated troponin. Generate differential diagnosis.'">
             Chest pain differential
-          </span>
-          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'evidence-retrieval'"
-            (click)="composerText = 'Summarize latest evidence on SGLT2 inhibitors in heart failure with reduced ejection fraction.'">
-            SGLT2 inhibitor evidence
           </span>
           <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'drug-safety'"
             (click)="composerText = 'Check interactions between warfarin, amiodarone, and metformin.'">
@@ -106,10 +114,6 @@
           <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'patient-summary'"
             (click)="composerText = 'Generate a structured SOAP note for a diabetic patient with recent HbA1c of 8.2%.'">
             Diabetic SOAP note
-          </span>
-          <span class="prompt-chip interactive-hover" *ngIf="activeAgentId === 'research-assistant'"
-            (click)="composerText = 'Find clinical trials for stage III melanoma patients eligible for immunotherapy.'">
-            Melanoma trials search
           </span>
         </div>
       </div>

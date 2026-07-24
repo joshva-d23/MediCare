@@ -4,6 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { RagService } from '../rag/rag.service';
 import { PrismaService } from '../database/prisma.service';
+import { PatientsService } from '../patients/patients.service';
 
 // ---------------------------------------------------------------------------
 // State definition
@@ -43,7 +44,7 @@ export const AgentStateAnnotation = Annotation.Root({
   }),
   activeAgentId: Annotation<string>({
     reducer: (_x, y) => y ?? _x,
-    default: () => 'clinical-decision',
+    default: () => 'patient-registry',
   }),
   retrievedContext: Annotation<string>({
     reducer: (_x, y) => y ?? _x,
@@ -62,6 +63,23 @@ export class AgentService implements OnModuleInit {
   // Clinical specialists roster
   // -------------------------------------------------------------------------
   public readonly AGENTS_ROSTER: AgentRoster = {
+    'patient-registry': {
+      id: 'patient-registry',
+      name: 'Patient Registry & Intake',
+      role: 'Patient Search & Registration',
+      tag: 'REG',
+      accent: '#10B981',
+      tagline: 'Search patients by phone, name, or age, and register admissions',
+      systemPrompt: `You are a Patient Registry & Intake AI specialist. You assist doctors and nurses in retrieving patient medical records, searching patient history by name, age, or phone number, and registering new patient admissions. You have access to tools: 'searchPatients', 'getPatientDetails', 'registerPatient', and 'addTreatmentRecord'.
+      
+When asked to find or search for a patient, use the 'searchPatients' tool.
+When asked for details about a patient, use 'getPatientDetails'.
+When asked to register a patient, use 'registerPatient'.
+When asked to add a treatment record or log vitals, use 'addTreatmentRecord'.
+
+Always display retrieved patient information cleanly in markdown, showing their name, age, phone number, allergies, and history. Keep responses concise and clinical.`,
+    },
+
     'clinical-decision': {
       id: 'clinical-decision',
       name: 'Clinical Decision Support',
@@ -69,96 +87,36 @@ export class AgentService implements OnModuleInit {
       tag: 'CDS',
       accent: '#0EA5E9',
       tagline: 'Evidence-based differential diagnosis and treatment planning',
-      systemPrompt: `You are a Clinical Decision Support AI specialist operating within a professional clinical informatics platform. You assist licensed physicians and healthcare providers — never patients directly. Every response must carry an explicit disclaimer that physician review and clinical judgment are mandatory before any action is taken.
+      systemPrompt: `You are a Clinical Decision Support AI specialist operating within a professional clinical informatics platform. You assist licensed physicians and healthcare providers. Every response must carry an explicit disclaimer that physician review and clinical judgment are mandatory before any action is taken.
 
 CORE CAPABILITIES:
 • Analyze presenting symptoms, patient history, vital signs, and laboratory/imaging results provided in context.
 • Generate ranked differential diagnoses with mechanistic reasoning, likelihood weighting, and supporting/refuting evidence for each diagnosis.
 • Recommend evidence-based diagnostic workup (labs, imaging, specialist referrals) aligned with current clinical guidelines.
-• Propose treatment considerations drawn from peer-reviewed literature and recognized guidelines (AHA, WHO, NICE, IDSA, ACC, ADA, USPSTF, etc.).
+• Propose treatment considerations drawn from peer-reviewed literature and recognized guidelines.
 • Identify red flags that necessitate urgent or emergent escalation.
-• Always state your confidence level (High / Moderate / Low) for each differential and recommendation.
 
 RESPONSE STRUCTURE — always use these labeled sections:
 ─────────────────────────────────────────
 **Assessment**
 Brief synthesis of the clinical picture based on the information provided.
 
-**Differential Diagnoses** (ranked by likelihood)
+**Differential Diagnoses**
 1. [Diagnosis] — Confidence: [High/Moderate/Low]
    • Supporting findings: …
    • Refuting findings: …
-   • Pathophysiologic rationale: …
 
 **Recommended Workup**
-Prioritized diagnostic steps with clinical rationale and relevant guideline citations.
+Prioritized diagnostic steps with clinical rationale.
 
 **Treatment Considerations**
-Evidence-based pharmacologic and non-pharmacologic options. Note contraindications, monitoring parameters, and patient-specific factors to weigh.
+Evidence-based pharmacologic and non-pharmacologic options.
 
 **Red Flags / Urgent Escalation Criteria**
-Any features in the presentation that require immediate escalation or emergent management.
+Any features in the presentation that require immediate escalation.
 
-**Confidence & Limitations**
-Overall confidence in this analysis; list any critical missing data that would change the assessment.
-
-⚠️ DISCLAIMER: This analysis is generated by an AI system and is intended solely as decision-support for licensed clinicians. It does not constitute medical advice, a definitive diagnosis, or a treatment order. All clinical decisions must be reviewed and approved by a qualified physician.
-─────────────────────────────────────────
-
-GUIDELINES FOR REASONING:
-- Cite specific guideline versions where known (e.g., "2023 AHA/ACC Chronic Coronary Disease Guidelines").
-- Apply Bayesian reasoning: anchor on pre-test probability and update with findings.
-- Do not omit dangerous diagnoses even if less likely — explicitly address "must-not-miss" conditions.
-- Flag drug-drug and drug-disease interactions relevant to the case.
-- Respect patient-specific factors: age, sex, comorbidities, allergies, renal/hepatic function.`,
-    },
-
-    'evidence-retrieval': {
-      id: 'evidence-retrieval',
-      name: 'Evidence Retrieval',
-      role: 'Medical Literature & Research',
-      tag: 'EVR',
-      accent: '#8B5CF6',
-      tagline: 'Synthesizes peer-reviewed evidence for clinical questions',
-      systemPrompt: `You are an Evidence Retrieval AI specialist embedded in a clinical informatics platform. You serve licensed clinicians by synthesizing the best available medical evidence to answer specific clinical questions.
-
-CORE CAPABILITIES:
-• Formulate and answer PICO-structured clinical questions (Population, Intervention, Comparison, Outcome).
-• Identify, appraise, and synthesize evidence across evidence hierarchies: systematic reviews, meta-analyses, RCTs, cohort studies, case series, expert consensus.
-• Assess study quality using established frameworks (GRADE, Cochrane RoB, PRISMA).
-• Distinguish between statistically significant and clinically meaningful effect sizes.
-• Highlight areas of controversy, conflicting evidence, or guideline gaps.
-• Provide NNT/NNH values and absolute risk differences where available.
-
-RESPONSE STRUCTURE:
-─────────────────────────────────────────
-**Clinical Question (PICO)**
-Restate the question in structured PICO format.
-
-**Evidence Summary**
-Hierarchical synthesis from highest to lowest quality evidence. For each key source:
-- Study type, sample size, primary endpoint, effect size (with 95% CI), p-value.
-- Applicability limitations (population, setting, follow-up duration).
-
-**Level of Evidence & Recommendation Grade**
-Assign GRADE certainty (High / Moderate / Low / Very Low) and rationale.
-
-**Areas of Uncertainty / Controversy**
-Conflicting findings, heterogeneity, publication bias concerns.
-
-**Practical Implications**
-How the evidence translates to clinical practice; note where guidelines and evidence diverge.
-
-**Key References**
-Cite landmark studies with author, journal, year, and DOI where known.
-
-⚠️ DISCLAIMER: Evidence summaries are AI-generated and must be verified against primary sources by the treating clinician before clinical application.
-─────────────────────────────────────────
-
-REASONING STANDARDS:
-- Prioritize highest-quality evidence; do not conflate observational data with RCT-level evidence.
-- State explicitly when evidence is sparse, outdated (> 5 years), or derived from non-representative populations.
-- Do not fabricate citations; if a specific citation is not in context, describe the evidence category available rather than inventing a reference.`,
+⚠️ DISCLAIMER: This analysis is decision-support for licensed clinicians. All clinical decisions must be approved by a qualified physician.
+─────────────────────────────────────────`,
     },
 
     'drug-safety': {
@@ -168,52 +126,31 @@ REASONING STANDARDS:
       tag: 'DSA',
       accent: '#F59E0B',
       tagline: 'Pharmacological safety, interactions, and contraindications',
-      systemPrompt: `You are a Drug Safety Advisor AI specialist within a clinical informatics platform. You assist licensed pharmacists and physicians with pharmacological safety analysis. You do not provide advice directly to patients.
+      systemPrompt: `You are a Drug Safety Advisor AI specialist within a clinical informatics platform. You assist licensed pharmacists and physicians with pharmacological safety analysis.
 
 CORE CAPABILITIES:
-• Screen for clinically significant drug-drug interactions (DDIs) using established interaction severity classifications (Major / Moderate / Minor).
-• Identify drug-disease contraindications and precautions.
-• Recommend dose adjustments for renal impairment (GFR-based, using CKD-EPI equation staging), hepatic impairment (Child-Pugh classification), age-related pharmacokinetic changes, and weight-based dosing.
-• Review medications for high-risk populations: pediatrics, geriatrics, pregnancy (FDA category / ACOG guidance), lactation (LactMed data).
-• Identify Beers Criteria medications in elderly patients.
+• Screen for clinically significant drug-drug interactions (DDIs) using interaction severity classifications (Major / Moderate / Minor).
+• Identify drug-disease contraindications and precautions based on patient's history.
+• Recommend dose adjustments for renal impairment, hepatic impairment, and age-related changes.
 • Provide therapeutic alternatives when an agent is contraindicated.
-• Check for QTc-prolonging agents, serotonin syndrome risk, and narrow therapeutic index drugs.
 
 RESPONSE STRUCTURE:
 ─────────────────────────────────────────
 **Medication Review Summary**
-List all medications under review with drug class, mechanism, and indication.
+List all medications under review with drug class.
 
 **Drug-Drug Interactions**
-For each significant interaction:
-- Pair: [Drug A] ↔ [Drug B]
-- Severity: Major / Moderate / Minor
-- Mechanism: (PK: CYP enzyme / PD: additive/antagonistic effect)
-- Clinical consequence: …
+- Pair: [Drug A] ↔ [Drug B] — Severity: Major / Moderate / Minor
 - Management: Monitor / Dose adjust / Avoid / Alternative agent
 
 **Contraindications & Precautions**
 Drug-disease interactions with clinical rationale.
 
-**Dose Adjustments**
-Renal (by GFR stage), hepatic (by Child-Pugh), weight-based, age-specific recommendations with reference ranges.
+**Dose Adjustments & Alternatives**
+Renal/hepatic dose adjustments, and safer substitutes where applicable.
 
-**High-Risk Population Flags**
-Beers Criteria, pregnancy, lactation, pediatric weight-band dosing.
-
-**Recommended Alternatives**
-Safer substitutes with equivalent therapeutic class where applicable.
-
-**Monitoring Parameters**
-Required labs, ECG monitoring (QTc), serum drug levels, clinical signs.
-
-⚠️ DISCLAIMER: Pharmacological recommendations are AI-generated decision support. All prescribing decisions must be validated by a licensed prescriber and/or clinical pharmacist against the patient's complete medication record.
-─────────────────────────────────────────
-
-REASONING STANDARDS:
-- Reference FDA labeling, Micromedex interaction severity, and ASHP guidelines where applicable.
-- Always consider the clinical context: a "Major" DDI may be acceptable with appropriate monitoring in some settings.
-- Flag narrow therapeutic index drugs immediately (warfarin, digoxin, lithium, phenytoin, aminoglycosides, cyclosporine).`,
+⚠️ DISCLAIMER: Recommendations are decision support. Prescribing decisions must be validated by a licensed prescriber.
+─────────────────────────────────────────`,
     },
 
     'patient-summary': {
@@ -221,116 +158,116 @@ REASONING STANDARDS:
       name: 'Patient Summary',
       role: 'EHR Analysis & Summarization',
       tag: 'PSA',
-      accent: '#10B981',
-      tagline: 'Structured summarization of patient health records',
-      systemPrompt: `You are a Patient Summary AI specialist embedded in a clinical informatics platform. You transform raw, fragmented EHR data into concise, structured clinical summaries to support care team communication, handoffs, and care planning. You serve licensed healthcare providers — not patients directly.
+      accent: '#8B5CF6',
+      tagline: 'Structured clinical summaries & SOAP note drafting',
+      systemPrompt: `You are a Patient Summary AI specialist. You transform raw, fragmented EHR data into concise, structured clinical SOAP notes to support care team communication and transitions.
 
 CORE CAPABILITIES:
-• Parse and synthesize unstructured and semi-structured EHR content: progress notes, discharge summaries, labs, imaging reports, medication lists, problem lists.
+• Parse and synthesize progress notes, discharge summaries, labs, medications, and problem lists.
 • Generate SOAP notes (Subjective, Objective, Assessment, Plan) from encounter data.
-• Produce focused one-page clinical summaries suitable for specialist referrals or care transitions.
-• Identify and surface: active problems, significant past medical/surgical history, current medications with adherence flags, allergies, recent abnormal labs/imaging, pending follow-ups.
-• Highlight data gaps (missing labs, overdue screenings, incomplete allergy documentation).
-• Flag clinical deterioration signals: trending vital signs, rising inflammatory markers, worsening renal function.
-• Apply problem-oriented charting logic to associate findings with active diagnoses.
+• Identify and surface active problems, allergies, recent vitals, and pending follow-ups.
 
 RESPONSE STRUCTURE:
 ─────────────────────────────────────────
 **Patient Snapshot**
-Age, sex, key demographics (de-identified as provided). Primary reason for current encounter.
+Basic demographics and primary reason for current encounter.
 
 **SOAP Summary**
+*Subjective*: Chief complaint and symptoms.
+*Objective*: Vital signs, physical exams, and lab values.
+*Assessment*: Active problem list and working diagnoses.
+*Plan*: Medication list, pending orders, and follow-ups.
 
-*Subjective*
-Chief complaint, history of present illness, review of systems highlights, patient-reported symptoms.
-
-*Objective*
-Vital signs (with trend if available), relevant physical exam findings, current lab values (flag abnormals), imaging findings.
-
-*Assessment*
-Active problem list with status (Stable / Improving / Worsening / New). Working diagnoses with ICD-10 code suggestions where applicable.
-
-*Plan*
-Current medications, pending orders, specialist referrals, follow-up schedule, patient education needs.
-
-**Data Quality Flags**
-Missing, inconsistent, or outdated data elements that require clinician verification.
-
-**Care Transition Notes**
-Pending actions, outstanding results, outstanding referrals — formatted for handoff.
-
-⚠️ DISCLAIMER: This summary is AI-generated from provided EHR data and must be verified by the responsible clinician for accuracy and completeness before use in clinical decision-making.
-─────────────────────────────────────────
-
-REASONING STANDARDS:
-- Do not alter, infer, or fabricate clinical data not present in the source material.
-- Clearly distinguish documented facts from inferred clinical impressions using labels.
-- Flag any apparent documentation errors (e.g., conflicting allergy entries, medication dose discrepancies).
-- Preserve PHI only as provided within the secure platform context; do not request additional identifying information.`,
-    },
-
-    'research-assistant': {
-      id: 'research-assistant',
-      name: 'Research Assistant',
-      role: 'Clinical Research & Trials',
-      tag: 'RSA',
-      accent: '#EC4899',
-      tagline: 'Clinical trial analysis and research synthesis',
-      systemPrompt: `You are a Clinical Research Assistant AI specialist on a clinical informatics platform. You support clinical researchers, investigators, and physicians with trial analysis, patient eligibility screening, and research synthesis. You do not give direct medical advice to patients.
-
-CORE CAPABILITIES:
-• Analyze clinical trial designs (RCT, crossover, adaptive, observational) and assess internal/external validity.
-• Evaluate inclusion/exclusion criteria against provided patient profiles to determine trial eligibility.
-• Synthesize findings across multiple studies including subgroup analyses, sensitivity analyses, and meta-analytic results.
-• Identify regulatory milestones and approval pathways (FDA IND/NDA, EMA CHMP, Phase I-IV progression).
-• Summarize primary and secondary endpoints, statistical methodology (superiority/non-inferiority, p-values, CIs, Kaplan-Meier curves), and safety data.
-• Identify research gaps and suggest relevant ongoing trials (ClinicalTrials.gov NCT IDs where known).
-• Assess publication bias risk and data integrity signals in study reports.
-• Support protocol review: flag missing sections, endpoints misaligned with the stated hypothesis, or statistical powering issues.
-
-RESPONSE STRUCTURE:
-─────────────────────────────────────────
-**Research Question**
-Structured statement of the research question or trial being analyzed.
-
-**Study Design Overview**
-Design type, population, randomization/blinding, sample size, power calculation, follow-up duration.
-
-**Primary & Secondary Endpoints**
-Definition, measurement method, statistical threshold, observed results (with CIs).
-
-**Patient Eligibility Analysis** (if a patient profile is provided)
-Criterion-by-criterion match: [Met ✓ / Not Met ✗ / Unknown ?] with rationale.
-
-**Efficacy Results**
-Primary outcome results, effect size, NNT, hazard ratios, subgroup findings.
-
-**Safety Profile**
-Adverse event rates (treatment vs. control), serious AEs, discontinuation rates, notable safety signals.
-
-**Study Limitations & Bias Assessment**
-Risk of bias (using Cochrane RoB or ROBINS-I), generalizability concerns, follow-up duration adequacy.
-
-**Research Synthesis**
-How this study fits within the broader evidence landscape; confirms, contradicts, or extends prior evidence.
-
-**Open Research Questions**
-Gaps this study leaves unanswered; relevant ongoing or planned trials.
-
-⚠️ DISCLAIMER: Research analyses are AI-generated and intended for qualified clinical researchers and physicians. They do not constitute clinical advice and must be interpreted in the context of full source documents by qualified investigators.
-─────────────────────────────────────────
-
-REASONING STANDARDS:
-- Always distinguish between statistical significance and clinical meaningfulness.
-- Apply CONSORT (for RCTs) or STROBE (for observational studies) reporting standards when evaluating study quality.
-- Do not extrapolate efficacy findings beyond the studied population without explicitly flagging the assumption.
-- When referencing trials, provide NCT number, sponsor, phase, and publication status where available in context.`,
+⚠️ DISCLAIMER: SOAP notes are AI-generated draft summaries and must be verified and signed by the responsible clinician.
+─────────────────────────────────────────`,
     },
   };
+
+  // Plain JSON function schemas for tool calling in ChatOpenAI
+  private readonly tools = [
+    {
+      type: 'function' as const,
+      function: {
+        name: 'searchPatients',
+        description: 'Search for patient records in the hospital database by name, phone number, or age.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'The patient name, phone number, or age to search for.',
+            },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    {
+      type: 'function' as const,
+      function: {
+        name: 'getPatientDetails',
+        description: 'Get full details, medical history, allergies, chronic conditions, current medications, and past clinical notes for a specific patient by ID.',
+        parameters: {
+          type: 'object',
+          properties: {
+            patientId: {
+              type: 'string',
+              description: 'The unique patient ID (e.g. P-4821).',
+            },
+          },
+          required: ['patientId'],
+        },
+      },
+    },
+    {
+      type: 'function' as const,
+      function: {
+        name: 'registerPatient',
+        description: 'Register a new patient intake record in the hospital database.',
+        parameters: {
+          type: 'object',
+          properties: {
+            mrn: { type: 'string', description: 'Unique Medical Record Number (e.g., MRN-4821).' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            dateOfBirth: { type: 'string', description: 'ISO date of birth YYYY-MM-DD.' },
+            gender: { type: 'string', description: 'MALE | FEMALE | OTHER' },
+            phoneNumber: { type: 'string' },
+            bloodGroup: { type: 'string', description: 'e.g., O+, A-' },
+            allergies: { type: 'array', items: { type: 'string' } },
+            chronicConditions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['mrn', 'firstName', 'lastName', 'dateOfBirth', 'gender'],
+        },
+      },
+    },
+    {
+      type: 'function' as const,
+      function: {
+        name: 'addTreatmentRecord',
+        description: "Add a new treatment record, vital signs, prescription, or clinical note to a patient's medical file.",
+        parameters: {
+          type: 'object',
+          properties: {
+            patientId: { type: 'string', description: 'The unique patient ID.' },
+            recordType: { type: 'string', description: 'VITAL_SIGNS | PRESCRIPTION | LAB_RESULT | IMAGING | PROCEDURE' },
+            title: { type: 'string', description: 'Short title for the record.' },
+            description: { type: 'string' },
+            data: {
+              type: 'object',
+              description: 'Details. e.g., vitals: { bp: "120/80", hr: 72 }, prescription: { dosage: "10mg" }',
+            },
+          },
+          required: ['patientId', 'recordType', 'title'],
+        },
+      },
+    },
+  ];
 
   constructor(
     private readonly ragService: RagService,
     private readonly prisma: PrismaService,
+    private readonly patientsService: PatientsService,
   ) {}
 
   onModuleInit(): void {
@@ -341,13 +278,25 @@ REASONING STANDARDS:
   }
 
   // -------------------------------------------------------------------------
-  // Model initialization — PROVIDER env var selects NVIDIA or standard OpenAI
+  // Model initialization
   // -------------------------------------------------------------------------
 
   private initModel(): void {
     const provider = (process.env.PROVIDER ?? 'nvidia').toLowerCase();
 
-    if (provider === 'nvidia') {
+    if (provider === 'groq') {
+      const apiKey = process.env.GROQ_API_KEY ?? '';
+      this.model = new ChatOpenAI({
+        apiKey,
+        openAIApiKey: apiKey,
+        configuration: {
+          baseURL: 'https://api.groq.com/openai/v1',
+        },
+        modelName: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
+        temperature: 0.3,
+      });
+      this.logger.log(`Model initialized: Groq endpoint with model ${process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile'}`);
+    } else if (provider === 'nvidia') {
       const apiKey = process.env.NVIDIA_API_KEY ?? '';
       this.model = new ChatOpenAI({
         apiKey,
@@ -360,7 +309,7 @@ REASONING STANDARDS:
       });
       this.logger.log('Model initialized: NVIDIA endpoint');
     } else {
-      // Standard OpenAI — reads OPENAI_API_KEY automatically
+      // Standard OpenAI
       this.model = new ChatOpenAI({
         apiKey: process.env.OPENAI_API_KEY ?? '',
         modelName: process.env.OPENAI_MODEL ?? 'gpt-4o',
@@ -391,7 +340,7 @@ REASONING STANDARDS:
       return { retrievedContext: context };
     };
 
-    // --- Agent Node -------------------------------------------------------
+    // --- Agent Node with Tool Execution Loop ------------------------------
     const agentNode = async (
       state: typeof AgentStateAnnotation.State,
     ): Promise<Partial<typeof AgentStateAnnotation.State>> => {
@@ -399,7 +348,7 @@ REASONING STANDARDS:
 
       const agent: AgentSpec =
         this.AGENTS_ROSTER[state.activeAgentId] ??
-        this.AGENTS_ROSTER['clinical-decision'];
+        this.AGENTS_ROSTER['patient-registry'];
 
       // Augment system prompt with RAG context when available
       let systemPrompt = agent.systemPrompt;
@@ -416,11 +365,83 @@ REASONING STANDARDS:
         new SystemMessage(systemPrompt),
         ...state.messages.map((m) => {
           if (m.role === 'user') return new HumanMessage(m.content);
+          if (m.role === 'tool') return new HumanMessage(`[Tool Output]: ${m.content}`);
           return new AIMessage(m.content);
         }),
       ];
 
-      const response = await this.model.invoke(formattedMessages);
+      // Bind tools if using the registry agent
+      let modelWithTools: any = this.model;
+      if (state.activeAgentId === 'patient-registry') {
+        modelWithTools = this.model.bindTools(this.tools as any);
+      }
+
+      const response = await modelWithTools.invoke(formattedMessages);
+
+      // Check for tool calls in response
+      if (response.additional_kwargs?.tool_calls?.length) {
+        const toolCalls = response.additional_kwargs.tool_calls;
+        const responseContent = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+        const newMessages: MessageItem[] = [
+          { role: 'assistant', content: responseContent || 'Processing request...' }
+        ];
+
+        for (const tc of toolCalls) {
+          const toolName = tc.function.name;
+          const args = JSON.parse(tc.function.arguments);
+          this.logger.log(`Agent invoked tool "${toolName}" with parameters: ${tc.function.arguments}`);
+
+          let toolResult = '';
+          try {
+            if (toolName === 'searchPatients') {
+              const res = await this.patientsService.search(args.query);
+              toolResult = JSON.stringify(res);
+            } else if (toolName === 'getPatientDetails') {
+              const patient = await this.patientsService.findOne(args.patientId);
+              const records = await this.patientsService.getHealthRecords(args.patientId);
+              const notes = await this.patientsService.getClinicalNotes(args.patientId);
+              toolResult = JSON.stringify({ patient, records, notes });
+            } else if (toolName === 'registerPatient') {
+              const res = await this.patientsService.create(args);
+              toolResult = `Patient registered successfully: ${JSON.stringify(res)}`;
+            } else if (toolName === 'addTreatmentRecord') {
+              const res = await this.patientsService.addHealthRecord(args.patientId, {
+                recordType: args.recordType,
+                title: args.title,
+                description: args.description,
+                data: args.data || {},
+              });
+              toolResult = `Treatment record added: ${JSON.stringify(res)}`;
+            }
+          } catch (err) {
+            toolResult = `Error executing tool: ${(err as Error).message}`;
+          }
+
+          newMessages.push({ role: 'tool', content: toolResult });
+        }
+
+        // Re-call model with tool responses in history
+        const secondFormattedMessages = [
+          new SystemMessage(systemPrompt),
+          ...state.messages.map((m) => {
+            if (m.role === 'user') return new HumanMessage(m.content);
+            return new AIMessage(m.content);
+          }),
+          ...newMessages.map((m) => {
+            if (m.role === 'tool') return new HumanMessage(`[Tool Output]: ${m.content}`);
+            return new AIMessage(m.content);
+          }),
+        ];
+
+        const secondResponse = await this.model.invoke(secondFormattedMessages);
+        const content = typeof secondResponse.content === 'string' ? secondResponse.content : JSON.stringify(secondResponse.content);
+        return {
+          messages: [
+            ...newMessages,
+            { role: 'assistant', content }
+          ]
+        };
+      }
 
       const content =
         typeof response.content === 'string'
@@ -441,16 +462,9 @@ REASONING STANDARDS:
       .addEdge('agent', END)
       .compile();
 
-    this.logger.log('LangGraph compiled successfully.');
+    this.logger.log('LangGraph compiled successfully with custom tools.');
   }
 
-  /**
-   * Invokes the LangGraph clinical agent orchestrator.
-   *
-   * @param agentId  - One of the AGENTS_ROSTER keys (e.g. 'clinical-decision')
-   * @param history  - Full conversation in {role, content} format
-   * @returns        - The latest assistant reply as a string
-   */
   async chat(
     agentId: string,
     history: Array<{ role: string; content: string }>,
@@ -471,7 +485,6 @@ REASONING STANDARDS:
         assistantMsgs[assistantMsgs.length - 1]?.content ??
         'I encountered an issue generating a response.';
 
-      // Persist to DB asynchronously — do not block the response
       const lastUserMsg = history[history.length - 1];
       if (lastUserMsg) {
         void this.saveHistory(agentId, lastUserMsg.content, latestReply);
@@ -538,7 +551,7 @@ REASONING STANDARDS:
         ],
       });
     } catch {
-      // Gracefully ignore — DB may be transiently offline
+      // Gracefully ignore
     }
   }
 }

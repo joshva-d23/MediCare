@@ -21,12 +21,23 @@ interface ChatRequestBody {
 export class ChatController {
   constructor(private readonly agentService: AgentService) {}
 
+  private getActiveModel(): string {
+    const provider = (process.env.PROVIDER ?? 'nvidia').toLowerCase();
+    if (provider === 'groq') {
+      return process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile';
+    }
+    if (provider === 'nvidia') {
+      return process.env.NVIDIA_MODEL ?? 'meta/llama-3.1-8b-instruct';
+    }
+    return process.env.OPENAI_MODEL ?? 'gpt-4o';
+  }
+
   @Get('config')
   getConfig(): Record<string, unknown> {
     return {
       platform: 'Clinical AI Platform',
       provider: process.env.PROVIDER ?? 'nvidia',
-      model: process.env.NVIDIA_MODEL ?? 'meta/llama-3.1-8b-instruct',
+      model: this.getActiveModel(),
       agentCount: Object.keys(this.agentService.AGENTS_ROSTER).length,
       version: '1.0.0',
     };
@@ -41,7 +52,7 @@ export class ChatController {
 
     return {
       provider: process.env.PROVIDER ?? 'nvidia',
-      model: process.env.NVIDIA_MODEL ?? 'meta/llama-3.1-8b-instruct',
+      model: this.getActiveModel(),
       agents: roster,
     };
   }

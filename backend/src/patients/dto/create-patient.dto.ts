@@ -67,6 +67,11 @@ export class CreatePatientDto {
   @IsNotEmpty()
   gender!: string;
 
+  @ApiPropertyOptional({ example: '+1-555-0143', description: 'Patient contact phone number' })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
   @ApiPropertyOptional({ example: 'O+', description: 'ABO blood group' })
   @IsOptional()
   @IsString()

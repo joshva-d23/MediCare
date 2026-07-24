@@ -55,11 +55,11 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   }
 
   private loadAgents(): void {
-    this.http.get<any>('http://localhost:3000/api/agents').subscribe({
+    this.http.get<any>('/api/agents').subscribe({
       next: (res) => {
         this.agents = res.agents || [];
-        this.provider = res.provider || 'NVIDIA';
-        this.model = res.model || 'meta/llama-3.1-8b-instruct';
+        this.provider = res.provider || 'Groq';
+        this.model = res.model || 'llama-3.3-70b-versatile';
         if (this.agents.length > 0) {
           this.activeAgentId = this.agents[0].id;
         }
@@ -67,14 +67,14 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.warn('Failed to load agents from backend, using fallbacks', err);
         this.agents = [
-          { id: 'clinical-decision', name: 'Clinical Decision Support', role: 'Diagnostic Reasoning', tagline: 'Differential diagnoses and symptom checks', accent: '#8b5cf6', tag: 'CDS', description: 'Assists with clinical diagnostic reasoning, symptom analysis, and differential diagnosis generation.' },
-          { id: 'evidence-retrieval', name: 'Evidence-Based Medicine', role: 'Literature & Guidelines', tagline: 'Cochrane, PubMed, and guideline checks', accent: '#0ea5e9', tag: 'EBM', description: 'Searches clinical literature, grades evidence, and retrieves consensus guidelines.' },
-          { id: 'drug-safety', name: 'Pharmacology Safety', role: 'Interactions & Contraindications', tagline: 'Check interactions and dosing controls', accent: '#ef4444', tag: 'PHA', description: 'Checks drug-drug/drug-allergy interactions, renal dosing adjustments, and safety profiles.' },
-          { id: 'patient-summary', name: 'Patient Summary Synthesizer', role: 'SOAP & EHR Structuring', tagline: 'EHR records parsing and soap note draft', accent: '#10b981', tag: 'SOAP', description: 'Parses patient history and builds structured SOAP notes or clinical handoff summaries.' },
+          { id: 'patient-registry', name: 'Patient Registry & Intake', role: 'Patient Search & Registration', tagline: 'Search patients by phone, name, or age, and register admissions', accent: '#10b981', tag: 'REG', description: 'Assists with searching records, registering new patient profiles, and adding treatment history.' },
+          { id: 'clinical-decision', name: 'Clinical Decision Support', role: 'Diagnostic Reasoning', tagline: 'Differential diagnoses and symptom checks', accent: '#0ea5e9', tag: 'CDS', description: 'Assists with clinical diagnostic reasoning, symptom analysis, and differential diagnosis generation.' },
+          { id: 'drug-safety', name: 'Pharmacology Safety', role: 'Interactions & Contraindications', tagline: 'Check interactions and dosing controls', accent: '#f59e0b', tag: 'PHA', description: 'Checks drug-drug/drug-allergy interactions, renal dosing adjustments, and safety profiles.' },
+          { id: 'patient-summary', name: 'Patient Summary Synthesizer', role: 'SOAP & EHR Structuring', tagline: 'EHR records parsing and soap note draft', accent: '#8b5cf6', tag: 'SOAP', description: 'Parses patient history and builds structured SOAP notes or clinical handoff summaries.' },
         ];
-        this.activeAgentId = 'clinical-decision';
-        this.provider = 'NVIDIA';
-        this.model = 'meta/llama-3.1-8b-instruct';
+        this.activeAgentId = 'patient-registry';
+        this.provider = 'Groq';
+        this.model = 'llama-3.3-70b-versatile';
       }
     });
   }
@@ -133,7 +133,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       .filter(m => m.agentId === this.activeAgentId)
       .map(m => ({ role: m.role, content: m.content }));
 
-    this.http.post<any>('http://localhost:3000/api/chat', {
+    this.http.post<any>('/api/chat', {
       agentId: this.activeAgentId,
       messages: history
     }).subscribe({

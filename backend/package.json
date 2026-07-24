@@ -22,6 +22,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
     "@elastic/elasticsearch": "^8.19.2",
+    "@huggingface/inference": "^4.13.23",
     "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.2.1",
     "@langchain/google-genai": "^2.2.0",
